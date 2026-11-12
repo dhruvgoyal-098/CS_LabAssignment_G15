@@ -12,11 +12,11 @@ Each variant is fully implemented with toggleable **Vulnerable Mode** and **Secu
 
 | # | Member Name | Roll Number | Vulnerability Category | Variant Implemented | Target Endpoint |
 |---|-------------|-------------|------------------------|---------------------|-----------------|
-| 1 | **Dhruv** | `[Enter Dhruv's Roll No.]` | SQL Injection | **Variant 1:** Authentication bypass | `POST /sqli-auth` |
-| 2 | **Aniket** | `[Enter Aniket's Roll No.]` | SQL Injection | **Variant 2:** UNION-based data extraction | `GET /sqli-union` |
-| 3 | **Aditya** | `[Enter Aditya's Roll No.]` | OS Command Injection | **Variant 1:** In-band (command output returned) | `POST /cmdi-inband` |
-| 4 | **Anubhav** | `[Enter Anubhav's Roll No.]` | Cross-Site Scripting (XSS) | **Variant 1:** Stored XSS | `POST /xss-stored` |
-| 5 | **Sarvansh** | `[Enter Sarvansh's Roll No.]` | Cross-Site Request Forgery (CSRF) | **Variant 2:** POST-based forged action (auto-submitting form) | `POST /csrf-post/update` |
+| 1 | **Dhruv** | `IIT2024098` | SQL Injection | **Variant 1:** Authentication bypass | `POST /sqli-auth` |
+| 2 | **Aniket** | `IIT2024099` | SQL Injection | **Variant 2:** UNION-based data extraction | `GET /sqli-union` |
+| 3 | **Aditya** | `IIT2024101` | OS Command Injection | **Variant 1:** In-band (command output returned) | `POST /cmdi-inband` |
+| 4 | **Anubhav** | `IIT2024060` | Cross-Site Scripting (XSS) | **Variant 1:** Stored XSS | `POST /xss-stored` |
+| 5 | **Sarvansh** | `IIT2024096` | Cross-Site Request Forgery (CSRF) | **Variant 2:** POST-based forged action (auto-submitting form) | `POST /csrf-post/update` |
 
 ---
 
@@ -294,101 +294,3 @@ if not submitted_token or not secrets.compare_digest(submitted_token, session_to
 - **Origin / Referer header validation:** Verify that the request's `Origin` matches the target server domain.
 
 ---
-
-## Video Demonstration Script (2–3 Minutes Per Member)
-
-When recording the group video demonstration, follow this standardized flow:
-
-1. **Dhruv (SQLi Auth Bypass):**
-   - Show Table 3 in the dashboard.
-   - Switch mode to **Vulnerable**. Enter `admin' --` in the username field. Click Login. Show the red banner: *"EXPLOIT SUCCESSFUL! Bypassed as Administrator"*.
-   - Click the mode toggle to switch to **Secure**. Enter the exact same payload `admin' --`. Click Login. Show that the login fails with *"Invalid credentials"*. Explain prepared statements.
-
-2. **Aniket (SQLi UNION Extraction):**
-   - Navigate to `/sqli-union`.
-   - In **Vulnerable** mode, enter `' UNION SELECT id, username, password, role FROM users --`. Click Search. Show the sensitive user passwords and roles leaking into the public product table.
-   - Switch to **Secure** mode. Run the exact same query. Show that zero records are leaked. Explain parameterized wildcard queries.
-
-3. **Aditya (In-Band OS Command Injection):**
-   - Navigate to `/cmdi-inband`.
-   - In **Vulnerable** mode, enter `127.0.0.1 && whoami`. Click Ping. Show the terminal output returning `whoami` stdout in-band.
-   - Switch to **Secure** mode. Enter the exact same payload. Show the red security banner: *"SECURITY BLOCKED: Input validation failed!"*. Explain regex allow-listing and `shell=False` argument vectors.
-
-4. **Anubhav (Stored XSS):**
-   - Navigate to `/xss-stored`.
-   - In **Vulnerable** mode, enter `<script>alert('Stored XSS - Cookie: ' + document.cookie);</script>`. Submit the comment. Refresh the page to show the JavaScript alert executing and displaying the cookie.
-   - Switch to **Secure** mode. Show that the comment is rendered safely as `&lt;script&gt;` text, with `HttpOnly` and CSP headers active.
-
-5. **Sarvansh (CSRF POST Auto-Submitting Form):**
-   - Navigate to `/csrf-post`. Show victim profile (`victim_alice` with legitimate email).
-   - In **Vulnerable** mode, open the hostile attacker page at `/attacker-site`. Show the form auto-submitting. Redirect back to profile to show the email changed to `attacker_sarvansh@hacker.io`.
-   - Switch to **Secure** mode. Re-trigger the attacker page. Show that the server rejects the request with **HTTP 403 Forbidden** due to the missing Anti-CSRF Synchronizer Token.
-
----
-
-## Viva Preparation Guide (Questions & Answers)
-
-### General Questions
-- **Q: Why does the web server need both input validation and output encoding?**
-  - **A:** Input validation (allow-lists) ensures data conforms to expected formats before processing (preventing injection into queries and commands). Output encoding ensures that when data is rendered back to the user, the browser interprets it as data, not executable markup (preventing XSS).
-
-### SQL Injection (Dhruv & Aniket)
-- **Q: How does a prepared statement physically prevent SQL injection?**
-  - **A:** In a prepared statement, the database parser compiles the query execution tree *before* parameter values are supplied. The parameters are transmitted out-of-band and inserted strictly as literal data nodes into the pre-compiled execution plan, meaning input metacharacters can never alter the syntax or logic tree.
-- **Q: What is the difference between In-band, Blind, and Out-of-band SQLi?**
-  - **A:** In-band (e.g. UNION-based or error-based) returns extracted data directly through the application's normal HTTP response channel. Blind SQLi (boolean or time-based) extracts data bit-by-bit by observing server true/false responses or induced sleep delays. Out-of-band SQLi extracts data via an alternate protocol (e.g. DNS or HTTP lookups to an external attacker-controlled server).
-
-### OS Command Injection (Aditya)
-- **Q: Why is `shell=False` safer than `shell=True` in Python's subprocess?**
-  - **A:** With `shell=True`, the Python process passes the command string to an operating system shell (`cmd.exe` or `/bin/sh`), which parses and interprets shell metacharacters (`&&`, `|`, `;`). With `shell=False`, arguments are passed directly as an array (argument vector) to the OS process creation API without invoking a command interpreter, preventing metacharacters from spawning new commands.
-
-### Cross-Site Scripting (Anubhav)
-- **Q: Why is the `HttpOnly` flag not a complete fix for XSS?**
-  - **A:** `HttpOnly` prevents client-side scripts from reading the `document.cookie` property, defending against cookie theft. However, an attacker with XSS execution can still perform actions on behalf of the user (DOM manipulation, keylogging, initiating authenticated AJAX requests, or defacing the interface). Output encoding and CSP remain mandatory.
-
-### Cross-Site Request Forgery (Sarvansh)
-- **Q: Why can an attacker not just read the Anti-CSRF token from the victim's session?**
-  - **A:** Because of the browser's **Same-Origin Policy (SOP)**. A script running on `attacker.com` cannot read the HTML or JavaScript state of pages on `localhost:5000` unless explicit cross-origin resource sharing (CORS) permissions are granted. Therefore, the attacker cannot steal the synchronizer token to embed it in their forged request.
-
----
-
-## Project Structure
-
-```
-c:\Users\Dhruv Goyal\Downloads\CS/
-├── app.py                     # Main Flask application with vulnerable & secure routes
-├── database.py                # Database initialisation, migrations, and seed data
-├── run.py                     # Main runner entrypoint
-├── requirements.txt           # Python library dependencies
-├── README.md                  # Complete project documentation, Table 3, and viva guide
-├── scripts/
-│   ├── test_exploits.py       # Automated unit test suite verifying all 10 states
-│   ├── generate_screenshots.py # Script generating 12 high-resolution UI evidence screenshots
-│   └── capture_screenshots.py # Headless browser screenshot capture utility
-├── static/
-│   ├── css/
-│   │   └── style.css          # Dark cyber-security theme
-│   └── screenshots/           # Evidence screenshots (Table 3, Vulnerable, Secure)
-│       ├── 00_securelab_dashboard.png
-│       ├── 01_dhruv_sqli_auth_vulnerable.png
-│       ├── 02_dhruv_sqli_auth_secure.png
-│       ├── 03_aniket_sqli_union_vulnerable.png
-│       ├── 04_aniket_sqli_union_secure.png
-│       ├── 05_aditya_cmdi_inband_vulnerable.png
-│       ├── 06_aditya_cmdi_inband_secure.png
-│       ├── 07_anubhav_xss_stored_vulnerable.png
-│       ├── 08_anubhav_xss_stored_secure.png
-│       ├── 09_sarvansh_csrf_attacker_page.png
-│       ├── 10_sarvansh_csrf_exploit_success.png
-│       └── 11_sarvansh_csrf_blocked_secure.png
-└── templates/
-    ├── base.html              # Layout, navbar, and security mode toggle
-    ├── index.html             # Table 3 declaration, architecture, and module cards
-    ├── sqli_auth.html         # Dhruv's module (SQLi Auth Bypass)
-    ├── sqli_union.html        # Aniket's module (SQLi UNION Extraction)
-    ├── cmdi_inband.html       # Aditya's module (In-Band OS Command Injection)
-    ├── xss_stored.html        # Anubhav's module (Stored XSS)
-    ├── csrf_post.html         # Sarvansh's module (POST CSRF)
-    └── attacker/
-        └── csrf_exploit.html  # Simulated hostile third-party attacker domain
-```
