@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Dhruv - SQL Injection (Auth Bypass) | SecureLab{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="card border-danger">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <span class="badge bg-danger fs-6 me-2">Dhruv's Assignment</span>
+          <strong class="text-white fs-5">Category: SQL Injection &bull; Variant 1: Authentication Bypass</strong>
+        </div>
+        <div>
+          {% if current_mode == 'vulnerable' %}
+            <span class="badge badge-vulnerable p-2"><i class="bi bi-unlock-fill me-1"></i> Vulnerable Implementation Active</span>
+          {% else %}
+            <span class="badge badge-secure p-2"><i class="bi bi-shield-lock-fill me-1"></i> Prepared Statements Defense Active</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Interactive Demonstration Form -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-box-arrow-in-right text-primary me-2"></i>Admin Authentication Portal</h5>
+        <small class="text-secondary">Target Endpoint: <code>POST /sqli-auth</code></small>
+      </div>
+      <div class="card-body">
+
+        <!-- Mode Notification inside form -->
+        {% if current_mode == 'vulnerable' %}
+          <div class="alert alert-danger py-2 small d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+            <div><strong>VULNERABLE STATE:</strong> String concatenation in SQL query. Authentication checks can be bypassed!</div>
+          </div>
+        {% else %}
+          <div class="alert alert-success py-2 small d-flex align-items-center">
+            <i class="bi bi-shield-fill-check fs-5 me-2"></i>
+            <div><strong>SECURE STATE:</strong> Parameterized Prepared Statements active. Metacharacters are treated as literal characters!</div>
+          </div>
+        {% endif %}
+
+        <form action="{{ url_for('sqli_auth') }}" method="POST">
+          <div class="mb-3">
+            <label class="form-label text-light">Username</label>
+            <div class="input-group">
+              <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-person"></i></span>
+              <input type="text" name="username" id="auth_username" class="form-control bg-dark border-secondary text-light" placeholder="e.g. admin or payload" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-light">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-key"></i></span>
+              <input type="text" name="password" id="auth_password" class="form-control bg-dark border-secondary text-light" placeholder="e.g. password or random string" value="any_password">
+            </div>
+            <div class="form-text text-secondary">In bypass attacks, password verification is commented out or short-circuited.</div>
+          </div>
+
+          <!-- Quick Payload Buttons -->
+          <div class="mb-3">
+            <label class="form-label text-secondary small">Click to test payloads:</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm btn-outline-warning" onclick="setPayload('admin\' --', 'randomPass123')">
+                <code>admin' --</code> (Admin Bypass)
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-warning" onclick="setPayload('\' OR \'1\'=\'1\' --', 'anyPass')">
+                <code>' OR '1'='1' --</code> (Tautology Bypass)
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setPayload('admin', 'AdminSuperSecret2026!')">
+                Valid Admin Credentials
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold">
+            <i class="bi bi-lock me-1"></i> Attempt Authentication
+          </button>
+        </form>
+
+        <!-- Execution Result Output -->
+        {% if executed_query %}
+          <div class="mt-4 pt-3 border-top border-secondary">
+            <h6 class="text-secondary small text-uppercase">Server Executed Query:</h6>
+            <div class="code-box text-warning mb-3">{{ executed_query }}</div>
+
+            {% if login_result and login_result.success %}
+              {% if login_result.bypassed %}
+                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                  <i class="bi bi-exclamation-octagon-fill fs-3 me-3 text-danger"></i>
+                  <div>
+                    <h5 class="alert-heading mb-1 text-danger">EXPLOIT SUCCESSFUL! (Authentication Bypassed)</h5>
+                    <p class="mb-1">Attacker successfully logged in as <strong>{{ login_result.user.username }}</strong> without knowing the correct password!</p>
+                    <small>User Role: <span class="badge bg-danger">{{ login_result.user.role }}</span> | Email: {{ login_result.user.email }}</small>
+                  </div>
+                </div>
+              {% else %}
+                <div class="alert alert-success d-flex align-items-center" role="alert">
+                  <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
+                  <div>
+                    <h5 class="alert-heading mb-1 text-success">Legitimate Authentication Successful</h5>
+                    <p class="mb-0">Logged in as verified user: <strong>{{ login_result.user.username }}</strong>.</p>
+                  </div>
+                </div>
+              {% endif %}
+            {% elif error_message %}
+              <div class="alert alert-secondary d-flex align-items-center" role="alert">
+                <i class="bi bi-shield-x fs-3 me-3 text-warning"></i>
+                <div>
+                  <h6 class="alert-heading mb-1 text-warning">Authentication Result:</h6>
+                  <p class="mb-0 text-light">{{ error_message }}</p>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Table 2 Requirements & Academic Report (for Video & Viva) -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text text-info me-2"></i>Viva &amp; Demonstration Guide (Table 2)</h5>
+      </div>
+      <div class="card-body">
+
+        <!-- (a) Vulnerable Implementation -->
+        <div class="mb-3">
+          <h6 class="text-danger fw-bold"><i class="bi bi-bug me-1"></i>(a) Vulnerable Implementation</h6>
+          <p class="small text-secondary mb-1">Located in <code>app.py</code> within function <code>sqli_auth()</code>:</p>
+          <div class="code-box small">
+# String formatting concatenates raw user input into SQL syntax
+query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+cursor.execute(query)
+          </div>
+        </div>
+
+        <!-- (b) Working Exploit -->
+        <div class="mb-3">
+          <h6 class="text-warning fw-bold"><i class="bi bi-terminal me-1"></i>(b) Working Exploit Payload</h6>
+          <p class="small text-secondary mb-1">In the username field, input:</p>
+          <div class="code-box text-light small">admin' --</div>
+          <p class="small text-secondary mt-1">
+            Resulting executed SQL query on server:
+            <br>
+            <code>SELECT * FROM users WHERE username = 'admin' --' AND password = '...'</code>
+            <br>
+            The <code>--</code> comment sequence instructs the SQLite engine to discard all subsequent syntax, short-circuiting the password verification.
+          </p>
+        </div>
+
+        <!-- (c) Root Cause -->
+        <div class="mb-3">
+          <h6 class="text-primary fw-bold"><i class="bi bi-info-circle me-1"></i>(c) Root Cause</h6>
+          <p class="small text-light mb-0 bg-dark p-2 rounded border border-secondary">
+            <strong>Lack of separation between data and control:</strong> User input contains characters (single quotes and comment markers) that are interpreted by the database engine as SQL language commands rather than literal string data, altering query semantics.
+          </p>
+        </div>
+
+        <!-- (d) Mitigation Implemented -->
+        <div class="mb-3">
+          <h6 class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i>(d) Mitigation Implemented</h6>
+          <p class="small text-secondary mb-1">
+            <strong>Parameterized Queries (Prepared Statements):</strong> Query structure is pre-compiled by the database engine; parameters are passed strictly as literal values through positional placeholders (<code>?</code>).
+          </p>
+          <div class="code-box small text-success">
+query = "SELECT * FROM users WHERE username = ? AND password = ?"
+cursor.execute(query, (username, password))
+          </div>
+        </div>
+
+        <!-- (e) Other Mitigations (Theory) -->
+        <div class="mb-2">
+          <h6 class="text-info fw-bold"><i class="bi bi-journal-bookmark me-1"></i>(e) Other Mitigations from Lecture (Theory)</h6>
+          <ul class="small text-secondary ps-3 mb-0">
+            <li><strong>Input validation with allow-lists:</strong> Enforcing strict alphanumeric constraints (e.g. <code>^[a-zA-Z0-9_]{3,30}$</code>) ensures disallowed characters (<code>'</code>, <code>;</code>, <code>-</code>) are rejected upfront.</li>
+            <li><strong>Least-privilege database accounts:</strong> Running web application database connections under restricted accounts with limited permissions prevents administrative tables from being altered or queried.</li>
+            <li><strong>Safe errors (generic error handling):</strong> Suppressing verbose SQL database error messages prevents error-based reconnaissance by attackers.</li>
+            <li><strong>Password hashing:</strong> Storing salted hashes (e.g., bcrypt/Argon2) rather than plain-text prevents direct password comparison logic flaw.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setPayload(u, p) {
+  document.getElementById('auth_username').value = u;
+  document.getElementById('auth_password').value = p;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SecureLab Multi-Vulnerability Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card bg-dark border-secondary p-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h2 class="text-white fw-bold mb-1">
+            <i class="bi bi-shield-shaded text-primary me-2"></i>Web Application Security Demonstration & Defense
+          </h2>
+          <p class="text-secondary mb-0">
+            Comprehensive practical implementation of four core web vulnerability categories and real-world defenses.
+          </p>
+        </div>
+        <div class="mt-3 mt-md-0">
+          <span class="badge bg-primary p-2 fs-6">5 Group Members</span>
+          <span class="badge bg-success p-2 fs-6 ms-1">4 Vulnerability Classes</span>
+          <span class="badge bg-danger p-2 fs-6 ms-1">Live Toggleable Defenses</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Table 3. Ownership Declaration -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-primary">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-primary">
+          <i class="bi bi-person-check-fill me-2"></i>Table 3: Ownership Declaration (Project Group Assignment)
+        </h5>
+        <span class="badge bg-secondary">Mandatory Declaration</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-dark table-hover table-striped mb-0">
+            <thead>
+              <tr class="text-secondary border-bottom border-secondary">
+                <th>#</th>
+                <th>Member Name</th>
+                <th>Roll Number</th>
+                <th>Vulnerability Category</th>
+                <th>Variant Implemented</th>
+                <th>Quick Launch</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><strong class="text-white">Dhruv</strong></td>
+                <td><code>[Enter Dhruv's Roll No.]</code></td>
+                <td><span class="badge bg-danger">SQL Injection</span></td>
+                <td>Variant 1: Authentication bypass</td>
+                <td>
+                  <a href="{{ url_for('sqli_auth') }}" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-play-circle me-1"></i> Demo Auth Bypass
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><strong class="text-white">Aniket</strong></td>
+                <td><code>[Enter Aniket's Roll No.]</code></td>
+                <td><span class="badge bg-danger">SQL Injection</span></td>
+                <td>Variant 2: UNION-based data extraction</td>
+                <td>
+                  <a href="{{ url_for('sqli_union') }}" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-play-circle me-1"></i> Demo UNION SQLi
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><strong class="text-white">Aditya</strong></td>
+                <td><code>[Enter Aditya's Roll No.]</code></td>
+                <td><span class="badge bg-warning text-dark">OS Command Injection</span></td>
+                <td>Variant 1: In-band (command output returned)</td>
+                <td>
+                  <a href="{{ url_for('cmdi_inband') }}" class="btn btn-sm btn-outline-warning text-dark">
+                    <i class="bi bi-play-circle me-1"></i> Demo In-Band CmdI
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><strong class="text-white">Anubhav</strong></td>
+                <td><code>[Enter Anubhav's Roll No.]</code></td>
+                <td><span class="badge bg-info text-dark">Cross-Site Scripting (XSS)</span></td>
+                <td>Variant 1: Stored XSS</td>
+                <td>
+                  <a href="{{ url_for('xss_stored') }}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-play-circle me-1"></i> Demo Stored XSS
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td><strong class="text-white">Sarvansh</strong></td>
+                <td><code>[Enter Sarvansh's Roll No.]</code></td>
+                <td><span class="badge" style="background-color: #8957e5;">Cross-Site Request Forgery (CSRF)</span></td>
+                <td>Variant 2: POST-based forged action (auto-submitting form)</td>
+                <td>
+                  <a href="{{ url_for('csrf_post') }}" class="btn btn-sm btn-outline-light" style="border-color: #8957e5; color: #d2a8ff;">
+                    <i class="bi bi-play-circle me-1"></i> Demo POST CSRF
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Variant Cards Grid -->
+<h4 class="text-white mb-3"><i class="bi bi-grid-fill me-2 text-info"></i>Interactive Vulnerability Labs</h4>
+<div class="row g-4 mb-4">
+
+  <!-- 1. Dhruv Card -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-danger">
+      <div class="card-header bg-black d-flex justify-content-between align-items-center">
+        <span class="badge bg-danger">Member: Dhruv</span>
+        <small class="text-secondary">SQL Injection</small>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title text-white">Variant 1: Authentication Bypass</h5>
+        <p class="card-text text-secondary small">
+          Injected user input breaks out of SQL query structure, converting authentication checks into a tautology.
+        </p>
+        <div class="code-box mb-3 small">admin' --</div>
+        <p class="small text-muted mb-0"><strong>Defense:</strong> Parameterized Prepared Statements.</p>
+      </div>
+      <div class="card-footer bg-black border-top border-secondary">
+        <a href="{{ url_for('sqli_auth') }}" class="btn btn-danger btn-sm w-100">Launch Dhruv's Module &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Aniket Card -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-danger">
+      <div class="card-header bg-black d-flex justify-content-between align-items-center">
+        <span class="badge bg-danger">Member: Aniket</span>
+        <small class="text-secondary">SQL Injection</small>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title text-white">Variant 2: UNION-Based Data Extraction</h5>
+        <p class="card-text text-secondary small">
+          Leverages SQL UNION operator to append confidential administrative credentials and records to public search results.
+        </p>
+        <div class="code-box mb-3 small">' UNION SELECT id, username, password, role FROM users --</div>
+        <p class="small text-muted mb-0"><strong>Defense:</strong> Parameterized Queries &amp; Input Validation.</p>
+      </div>
+      <div class="card-footer bg-black border-top border-secondary">
+        <a href="{{ url_for('sqli_union') }}" class="btn btn-danger btn-sm w-100">Launch Aniket's Module &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Aditya Card -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-warning">
+      <div class="card-header bg-black d-flex justify-content-between align-items-center">
+        <span class="badge bg-warning text-dark">Member: Aditya</span>
+        <small class="text-secondary">Command Injection</small>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title text-white">Variant 1: In-Band Command Injection</h5>
+        <p class="card-text text-secondary small">
+          Attacker injects shell metacharacters (<code>&&</code>, <code>&amp;</code>, <code>;</code>) into network diagnostic tool to execute unauthorized OS commands.
+        </p>
+        <div class="code-box mb-3 small">127.0.0.1 && whoami</div>
+        <p class="small text-muted mb-0"><strong>Defense:</strong> Shell avoidance (argument vector) &amp; regex allow-list.</p>
+      </div>
+      <div class="card-footer bg-black border-top border-secondary">
+        <a href="{{ url_for('cmdi_inband') }}" class="btn btn-warning btn-sm w-100 text-dark fw-bold">Launch Aditya's Module &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Anubhav Card -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-info">
+      <div class="card-header bg-black d-flex justify-content-between align-items-center">
+        <span class="badge bg-info text-dark">Member: Anubhav</span>
+        <small class="text-secondary">XSS</small>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title text-white">Variant 1: Stored Cross-Site Scripting</h5>
+        <p class="card-text text-secondary small">
+          Malicious script payload is permanently stored in server database and executes inside victim browsers upon rendering.
+        </p>
+        <div class="code-box mb-3 small">&lt;script&gt;alert('Stored XSS - Cookie: '+document.cookie)&lt;/script&gt;</div>
+        <p class="small text-muted mb-0"><strong>Defense:</strong> Context-aware HTML escaping, HttpOnly cookie, strict CSP.</p>
+      </div>
+      <div class="card-footer bg-black border-top border-secondary">
+        <a href="{{ url_for('xss_stored') }}" class="btn btn-info btn-sm w-100">Launch Anubhav's Module &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Sarvansh Card -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100" style="border-color: #8957e5;">
+      <div class="card-header bg-black d-flex justify-content-between align-items-center">
+        <span class="badge text-light" style="background-color: #8957e5;">Member: Sarvansh</span>
+        <small class="text-secondary">CSRF</small>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title text-white">Variant 2: POST-Based Auto-Submitting Form</h5>
+        <p class="card-text text-secondary small">
+          Hostile third-party site forces victim's authenticated browser to make an unauthorized state-changing POST request.
+        </p>
+        <div class="code-box mb-3 small">&lt;form method="POST" ...&gt; + auto-submit JS</div>
+        <p class="small text-muted mb-0"><strong>Defense:</strong> Synchronizer Anti-CSRF Token &amp; SameSite cookies.</p>
+      </div>
+      <div class="card-footer bg-black border-top border-secondary">
+        <a href="{{ url_for('csrf_post') }}" class="btn btn-sm w-100" style="background-color: #8957e5; color: white;">Launch Sarvansh's Module &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attacker Site Card -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-secondary">
+      <div class="card-header bg-black d-flex justify-content-between align-items-center">
+        <span class="badge bg-secondary">Attacker Simulation</span>
+        <small class="text-warning">External Host</small>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title text-white">Simulated Hostile Webpage</h5>
+        <p class="card-text text-secondary small">
+          Hosted malicious page simulating an attacker's domain (e.g. phishing link) demonstrating the CSRF POST exploit in real time.
+        </p>
+        <div class="code-box mb-3 small text-warning">http://localhost:5000/attacker-site</div>
+        <p class="small text-muted mb-0"><strong>Demonstrates:</strong> Cross-origin credential exploitation.</p>
+      </div>
+      <div class="card-footer bg-black border-top border-secondary">
+        <a href="{{ url_for('attacker_site') }}" target="_blank" class="btn btn-outline-warning btn-sm w-100">Open Attacker Site &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

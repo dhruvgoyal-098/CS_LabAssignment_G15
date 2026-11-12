@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Aniket - SQL Injection (UNION Data Extraction) | SecureLab{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="card border-danger">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <span class="badge bg-danger fs-6 me-2">Aniket's Assignment</span>
+          <strong class="text-white fs-5">Category: SQL Injection &bull; Variant 2: UNION-Based Data Extraction</strong>
+        </div>
+        <div>
+          {% if current_mode == 'vulnerable' %}
+            <span class="badge badge-vulnerable p-2"><i class="bi bi-unlock-fill me-1"></i> Vulnerable Implementation Active</span>
+          {% else %}
+            <span class="badge badge-secure p-2"><i class="bi bi-shield-lock-fill me-1"></i> Parameterized Query Active</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Search Portal and Results -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-search text-primary me-2"></i>Product Catalog Search</h5>
+        <small class="text-secondary">Target Endpoint: <code>GET /sqli-union</code></small>
+      </div>
+      <div class="card-body">
+
+        <!-- Mode Notification -->
+        {% if current_mode == 'vulnerable' %}
+          <div class="alert alert-danger py-2 small d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+            <div><strong>VULNERABLE STATE:</strong> Search parameter concatenated directly into SQL. Attackers can execute UNION queries!</div>
+          </div>
+        {% else %}
+          <div class="alert alert-success py-2 small d-flex align-items-center">
+            <i class="bi bi-shield-fill-check fs-5 me-2"></i>
+            <div><strong>SECURE STATE:</strong> Parameterized SQL query active. UNION metacharacters are treated as literal text.</div>
+          </div>
+        {% endif %}
+
+        <form action="{{ url_for('sqli_union') }}" method="GET">
+          <div class="mb-3">
+            <label class="form-label text-light">Search Product Name</label>
+            <div class="input-group">
+              <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-search"></i></span>
+              <input type="text" name="q" id="search_input" class="form-control bg-dark border-secondary text-light" placeholder="e.g. Camera or UNION payload" value="{{ search_query }}">
+              <button class="btn btn-primary" type="submit">Search</button>
+            </div>
+          </div>
+
+          <!-- Quick Payload Buttons -->
+          <div class="mb-3">
+            <label class="form-label text-secondary small">Test Payloads:</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm btn-outline-warning" onclick="setSearchPayload('\' UNION SELECT id, username, password, role FROM users --')">
+                <code>' UNION SELECT id, username, password, role FROM users --</code>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setSearchPayload('Security')">
+                Normal Search: "Security"
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Executed Query Display -->
+        {% if executed_query %}
+          <div class="mt-3">
+            <h6 class="text-secondary small text-uppercase">Executed Query:</h6>
+            <div class="code-box text-warning mb-3">{{ executed_query }}</div>
+          </div>
+        {% endif %}
+
+        <!-- Exploitation Alert -->
+        {% if is_union_leaked %}
+          <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-octagon-fill fs-3 me-3 text-danger"></i>
+            <div>
+              <h5 class="alert-heading mb-1 text-danger">EXPLOIT SUCCESSFUL! Sensitive Data Extracted</h5>
+              <p class="mb-0 small">The UNION query successfully merged secret data from table <code>users</code> into the public product table!</p>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Error Alert -->
+        {% if error_message %}
+          <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-circle me-1"></i> {{ error_message }}
+          </div>
+        {% endif %}
+
+        <!-- Search Results Table -->
+        <h6 class="text-white mt-3"><i class="bi bi-table me-1 text-info"></i>Returned Database Records:</h6>
+        <div class="table-responsive">
+          <table class="table table-dark table-sm table-bordered">
+            <thead>
+              <tr class="text-secondary">
+                <th>ID</th>
+                <th>Product Name / Leaked Username</th>
+                <th>Category / Leaked Password</th>
+                <th>Price / Leaked Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if products %}
+                {% for item in products %}
+                  <tr {% if 'Admin' in str(item.category) or 'admin' in str(item.name) or 'secret' in str(item.category)|lower %}class="table-danger"{% endif %}>
+                    <td>{{ item.id }}</td>
+                    <td><strong class="text-white">{{ item.name }}</strong></td>
+                    <td>
+                      {% if 'secret' in str(item.category)|lower or 'password' in str(item.category)|lower or 'Pass' in str(item.category) %}
+                        <span class="badge bg-danger">{{ item.category }}</span>
+                      {% else %}
+                        {{ item.category }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if item.price in ['administrator', 'user', 'security_engineer'] %}
+                        <span class="badge bg-warning text-dark">{{ item.price }}</span>
+                      {% else %}
+                        ${{ item.price }}
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-3">No matching records returned.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Academic Report (Table 2) -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text text-info me-2"></i>Viva &amp; Demonstration Guide (Table 2)</h5>
+      </div>
+      <div class="card-body">
+
+        <!-- (a) Vulnerable Implementation -->
+        <div class="mb-3">
+          <h6 class="text-danger fw-bold"><i class="bi bi-bug me-1"></i>(a) Vulnerable Implementation</h6>
+          <p class="small text-secondary mb-1">Located in <code>app.py</code> within function <code>sqli_union()</code>:</p>
+          <div class="code-box small">
+# String formatting concatenates query parameter directly into SQL
+query_str = f"SELECT id, name, category, price FROM products WHERE name LIKE '%{search_query}%'"
+cursor.execute(query_str)
+          </div>
+        </div>
+
+        <!-- (b) Working Exploit -->
+        <div class="mb-3">
+          <h6 class="text-warning fw-bold"><i class="bi bi-terminal me-1"></i>(b) Working Exploit Payload</h6>
+          <p class="small text-secondary mb-1">In the search input parameter <code>q</code>:</p>
+          <div class="code-box text-light small">' UNION SELECT id, username, password, role FROM users --</div>
+          <p class="small text-secondary mt-1">
+            <strong>How it works:</strong> The single quote closes the LIKE wildcard. The <code>UNION</code> operator combines the product query with a query against the <code>users</code> table having the exact same 4 columns. The <code>--</code> comment discards the trailing quote and wildcard.
+          </p>
+        </div>
+
+        <!-- (c) Root Cause -->
+        <div class="mb-3">
+          <h6 class="text-primary fw-bold"><i class="bi bi-info-circle me-1"></i>(c) Root Cause</h6>
+          <p class="small text-light mb-0 bg-dark p-2 rounded border border-secondary">
+            <strong>Unvalidated input concatenation:</strong> Direct string injection allows attacker to append arbitrary SQL clauses. Because the database engine cannot distinguish between the developer's original query structure and the attacker's UNION query, it executes both and returns unauthorized table data.
+          </p>
+        </div>
+
+        <!-- (d) Mitigation Implemented -->
+        <div class="mb-3">
+          <h6 class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i>(d) Mitigation Implemented</h6>
+          <p class="small text-secondary mb-1">
+            <strong>Parameterized Queries with Wildcard Binding:</strong> The SQL query statement is pre-compiled. The search string with wildcards is bound as a single literal parameter.
+          </p>
+          <div class="code-box small text-success">
+query_str = "SELECT id, name, category, price FROM products WHERE name LIKE ?"
+cursor.execute(query_str, (f"%{search_query}%",))
+          </div>
+        </div>
+
+        <!-- (e) Other Mitigations (Theory) -->
+        <div class="mb-2">
+          <h6 class="text-info fw-bold"><i class="bi bi-journal-bookmark me-1"></i>(e) Other Mitigations from Lecture (Theory)</h6>
+          <ul class="small text-secondary ps-3 mb-0">
+            <li><strong>Input validation with allow-lists:</strong> Validate that search terms only contain alphanumeric characters, discarding SQL tokens like <code>UNION</code>, <code>SELECT</code>, and single quotes.</li>
+            <li><strong>Least-privilege database accounts:</strong> Configure the web app's database user to have <code>SELECT</code> permissions strictly on the <code>products</code> table and NO permissions on the <code>users</code> table.</li>
+            <li><strong>Safe errors &amp; column matching prevention:</strong> Suppress verbose error messages that reveal table structures and column counts to attackers during discovery.</li>
+            <li><strong>Object-Relational Mapping (ORM):</strong> Using established ORMs (e.g. SQLAlchemy) that enforce parameterization natively across all query builders.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setSearchPayload(p) {
+  document.getElementById('search_input').value = p;
+}
+</script>
+{% endblock %}

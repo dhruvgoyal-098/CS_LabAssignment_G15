@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Anubhav - Cross-Site Scripting (Stored XSS) | SecureLab{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="card border-info">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <span class="badge bg-info text-dark fs-6 me-2">Anubhav's Assignment</span>
+          <strong class="text-white fs-5">Category: Cross-Site Scripting (XSS) &bull; Variant 1: Stored XSS</strong>
+        </div>
+        <div>
+          {% if current_mode == 'vulnerable' %}
+            <span class="badge badge-vulnerable p-2"><i class="bi bi-unlock-fill me-1"></i> Raw Output Active (| safe)</span>
+          {% else %}
+            <span class="badge badge-secure p-2"><i class="bi bi-shield-lock-fill me-1"></i> Context-Aware Encoding &amp; CSP Active</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Interactive Feedback & Stored Comments -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-chat-square-text text-info me-2"></i>Community Feedback Board</h5>
+        <small class="text-secondary">Target Endpoint: <code>POST /xss-stored</code></small>
+      </div>
+      <div class="card-body">
+
+        <!-- Mode Notification -->
+        {% if current_mode == 'vulnerable' %}
+          <div class="alert alert-danger py-2 small d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+            <div><strong>VULNERABLE STATE:</strong> Stored comments rendered without encoding via <code>| safe</code>. Injected scripts execute!</div>
+          </div>
+        {% else %}
+          <div class="alert alert-success py-2 small d-flex align-items-center">
+            <i class="bi bi-shield-fill-check fs-5 me-2"></i>
+            <div><strong>SECURE STATE:</strong> HTML entity auto-escaping active + CSP Header + HttpOnly cookies protected.</div>
+          </div>
+        {% endif %}
+
+        <!-- Post Comment Form -->
+        <form action="{{ url_for('xss_stored') }}" method="POST" class="mb-4">
+          <div class="mb-3">
+            <label class="form-label text-light">Author Name</label>
+            <input type="text" name="author" id="author_input" class="form-control bg-dark border-secondary text-light" placeholder="e.g. Security Researcher" value="Researcher" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-light">Comment / Feedback Body</label>
+            <textarea name="comment" id="comment_input" rows="3" class="form-control bg-dark border-secondary text-light" placeholder="Leave feedback or inject XSS payload" required></textarea>
+          </div>
+
+          <!-- Quick Payload Buttons -->
+          <div class="mb-3">
+            <label class="form-label text-secondary small">Test Payloads:</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm btn-outline-warning text-light" onclick="setXssPayload('&lt;script&gt;alert(\'Stored XSS Executed by Anubhav! Stolen Cookie: \' + document.cookie)&lt;/script&gt;')">
+                Script Alert + Cookie
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-warning text-light" onclick="setXssPayload('&lt;img src=x onerror=&quot;alert(\'Stored XSS Triggered via Image Onerror!\')&quot;&gt;')">
+                Image Onerror
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setXssPayload('Great security platform demonstration!')">
+                Benign Comment
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <button type="submit" class="btn btn-info fw-bold">
+              <i class="bi bi-send me-1"></i> Submit Feedback
+            </button>
+          </div>
+        </form>
+
+        <!-- Stored Comments Section -->
+        <div class="d-flex justify-content-between align-items-center border-top border-secondary pt-3 mb-3">
+          <h6 class="text-white mb-0"><i class="bi bi-chat-dots me-1 text-info"></i>Stored Comments in Database:</h6>
+          <form action="{{ url_for('xss_clear') }}" method="POST">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-trash"></i> Reset Comments
+            </button>
+          </form>
+        </div>
+
+        <div class="comments-container" style="max-height: 320px; overflow-y: auto;">
+          {% for item in feedbacks %}
+            <div class="p-3 mb-2 bg-dark rounded border border-secondary">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong class="text-info">{{ item.author }}</strong>
+                <small class="text-secondary">{{ item.created_at }}</small>
+              </div>
+
+              <!-- RENDERING DIFFERENCE: VULNERABLE VS SECURE -->
+              <div class="comment-content text-light pt-1">
+                {% if current_mode == 'vulnerable' %}
+                  <!-- VULNERABLE: Rendered as raw unescaped HTML -->
+                  {{ item.comment | safe }}
+                {% else %}
+                  <!-- SECURE: Jinja2 auto-escaped HTML -->
+                  {{ item.comment }}
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Academic Report (Table 2) -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text text-info me-2"></i>Viva &amp; Demonstration Guide (Table 2)</h5>
+      </div>
+      <div class="card-body">
+
+        <!-- (a) Vulnerable Implementation -->
+        <div class="mb-3">
+          <h6 class="text-danger fw-bold"><i class="bi bi-bug me-1"></i>(a) Vulnerable Implementation</h6>
+          <p class="small text-secondary mb-1">Located in Jinja2 template rendering stored comments with <code>| safe</code> filter:</p>
+          <div class="code-box small">
+&lt;!-- Raw untrusted user input marked safe, disabling framework auto-escaping --&gt;
+&lt;div class="comment-content"&gt;
+  &#123;&#123; item.comment | safe &#125;&#125;
+&lt;/div&gt;
+          </div>
+        </div>
+
+        <!-- (b) Working Exploit -->
+        <div class="mb-3">
+          <h6 class="text-warning fw-bold"><i class="bi bi-terminal me-1"></i>(b) Working Exploit Payload</h6>
+          <p class="small text-secondary mb-1">Submit the following payload into the feedback comment field:</p>
+          <div class="code-box text-light small">&lt;script&gt;alert('Stored XSS Executed by Anubhav! Cookie: ' + document.cookie)&lt;/script&gt;</div>
+          <p class="small text-secondary mt-1">
+            <strong>How it works:</strong> The payload is saved to the SQLite database. Whenever any client accesses or refreshes the page, the server embeds the raw script tag into the HTML response. The client's web browser parses and executes the JavaScript in the context of the user's session.
+          </p>
+        </div>
+
+        <!-- (c) Root Cause -->
+        <div class="mb-3">
+          <h6 class="text-primary fw-bold"><i class="bi bi-info-circle me-1"></i>(c) Root Cause</h6>
+          <p class="small text-light mb-0 bg-dark p-2 rounded border border-secondary">
+            <strong>Untrusted user-supplied data rendered without output encoding:</strong> The browser cannot distinguish between legitimate application scripts authored by the developer and malicious scripts submitted by an attacker stored in the database.
+          </p>
+        </div>
+
+        <!-- (d) Mitigation Implemented -->
+        <div class="mb-3">
+          <h6 class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i>(d) Mitigation Implemented</h6>
+          <p class="small text-secondary mb-1">
+            <strong>Context-Aware Output Encoding &amp; Removal of <code>| safe</code>:</strong> All HTML special characters (<code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>, <code>"</code>, <code>'</code>) are encoded into corresponding safe entities (e.g., <code>&amp;lt;</code>, <code>&amp;gt;</code>). In addition, session cookies are configured with the <code>HttpOnly</code> attribute.
+          </p>
+          <div class="code-box small text-success">
+&lt;!-- Jinja2 auto-escapes by default when | safe is omitted --&gt;
+&lt;div class="comment-content"&gt;
+  &#123;&#123; item.comment &#125;&#125;
+&lt;/div&gt;
+          </div>
+        </div>
+
+        <!-- (e) Other Mitigations (Theory) -->
+        <div class="mb-2">
+          <h6 class="text-info fw-bold"><i class="bi bi-journal-bookmark me-1"></i>(e) Other Mitigations from Lecture (Theory)</h6>
+          <ul class="small text-secondary ps-3 mb-0">
+            <li><strong>Content Security Policy (CSP):</strong> HTTP header <code>Content-Security-Policy: default-src 'self'; script-src 'self';</code> instructs modern browsers to block all inline script execution and unauthorized external script sources.</li>
+            <li><strong>HttpOnly Cookie Flag:</strong> Prevents client-side scripts from reading session cookies via <code>document.cookie</code>, blocking session hijacking even if XSS occurs.</li>
+            <li><strong>Sanitizer libraries for rich HTML:</strong> When rich text (formatting/markup) is needed, use dedicated sanitizers (e.g., DOMPurify, Bleach) to strip unsafe elements/attributes.</li>
+            <li><strong>Safe DOM Sinks:</strong> In frontend JavaScript, utilize safe properties like <code>textContent</code> or <code>innerText</code> instead of dangerous sinks like <code>innerHTML</code>, <code>document.write()</code>, or <code>eval()</code>.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setXssPayload(p) {
+  document.getElementById('comment_input').value = p;
+}
+</script>
+{% endblock %}

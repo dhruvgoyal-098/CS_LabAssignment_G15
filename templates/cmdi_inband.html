@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Aditya - OS Command Injection (In-Band) | SecureLab{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col-12">
+    <div class="card border-warning">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <span class="badge bg-warning text-dark fs-6 me-2">Aditya's Assignment</span>
+          <strong class="text-white fs-5">Category: OS Command Injection &bull; Variant 1: In-Band Output Returned</strong>
+        </div>
+        <div>
+          {% if current_mode == 'vulnerable' %}
+            <span class="badge badge-vulnerable p-2"><i class="bi bi-unlock-fill me-1"></i> Vulnerable Implementation Active (shell=True)</span>
+          {% else %}
+            <span class="badge badge-secure p-2"><i class="bi bi-shield-lock-fill me-1"></i> Defenses Active (Argument Vector &amp; Regex Allow-list)</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: Interactive Command Utility -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-hdd-network text-warning me-2"></i>Network Diagnostic Utility (Ping Tool)</h5>
+        <small class="text-secondary">Target Endpoint: <code>POST /cmdi-inband</code></small>
+      </div>
+      <div class="card-body">
+
+        <!-- Mode Notification -->
+        {% if current_mode == 'vulnerable' %}
+          <div class="alert alert-danger py-2 small d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-5 me-2"></i>
+            <div><strong>VULNERABLE STATE:</strong> Executing commands with <code>shell=True</code>. Metacharacters are interpreted by system shell!</div>
+          </div>
+        {% else %}
+          <div class="alert alert-success py-2 small d-flex align-items-center">
+            <i class="bi bi-shield-fill-check fs-5 me-2"></i>
+            <div><strong>SECURE STATE:</strong> Input validation with regex allow-list + shell avoided (<code>shell=False</code> with argument vector).</div>
+          </div>
+        {% endif %}
+
+        <form action="{{ url_for('cmdi_inband') }}" method="POST">
+          <div class="mb-3">
+            <label class="form-label text-light">Target IP Address or Hostname</label>
+            <div class="input-group">
+              <span class="input-group-text bg-dark border-secondary text-secondary"><i class="bi bi-terminal"></i></span>
+              <input type="text" name="target" id="target_input" class="form-control bg-dark border-secondary text-light" placeholder="e.g. 127.0.0.1 or injection payload" value="{{ target_host }}" required>
+              <button class="btn btn-warning text-dark fw-bold" type="submit">Execute Ping</button>
+            </div>
+            <div class="form-text text-secondary">Executes a single ping packet to verify host reachability.</div>
+          </div>
+
+          <!-- Quick Payload Buttons -->
+          <div class="mb-3">
+            <label class="form-label text-secondary small">Test Payloads:</label>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-sm btn-outline-warning text-light" onclick="setCmdPayload('127.0.0.1 && whoami')">
+                <code>127.0.0.1 && whoami</code>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-warning text-light" onclick="setCmdPayload('127.0.0.1 & dir')">
+                <code>127.0.0.1 & dir</code>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-warning text-light" onclick="setCmdPayload('127.0.0.1 & echo EXPLOIT_CONFIRMED_BY_ADITYA')">
+                <code>127.0.0.1 & echo EXPLOIT...</code>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="setCmdPayload('127.0.0.1')">
+                Normal IP: 127.0.0.1
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Command Executed -->
+        {% if executed_command %}
+          <div class="mt-3">
+            <h6 class="text-secondary small text-uppercase">Underlying Command Invocation:</h6>
+            <div class="code-box text-warning mb-3">{{ executed_command }}</div>
+          </div>
+        {% endif %}
+
+        <!-- Exploitation Success Alert -->
+        {% if injection_detected and command_output %}
+          <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-octagon-fill fs-3 me-3 text-danger"></i>
+            <div>
+              <h5 class="alert-heading mb-1 text-danger">EXPLOIT SUCCESSFUL! Arbitrary Command Executed</h5>
+              <p class="mb-0 small">The host operating system processed the injected command and returned raw shell output directly in-band!</p>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Error / Blocked Message -->
+        {% if error_message %}
+          <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-shield-fill-x fs-3 me-3 text-danger"></i>
+            <div>
+              <h6 class="alert-heading mb-1 text-danger">Command Execution Blocked:</h6>
+              <p class="mb-0 small text-light">{{ error_message }}</p>
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- In-Band Command Output Terminal Box -->
+        {% if command_output %}
+          <h6 class="text-white mt-3"><i class="bi bi-terminal-fill me-1 text-info"></i>In-Band Standard Output (stdout):</h6>
+          <pre class="code-box text-success p-3" style="max-height: 280px; overflow-y: auto;">{{ command_output }}</pre>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Academic Report (Table 2) -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header bg-black text-white">
+        <h5 class="mb-0"><i class="bi bi-file-earmark-text text-info me-2"></i>Viva &amp; Demonstration Guide (Table 2)</h5>
+      </div>
+      <div class="card-body">
+
+        <!-- (a) Vulnerable Implementation -->
+        <div class="mb-3">
+          <h6 class="text-danger fw-bold"><i class="bi bi-bug me-1"></i>(a) Vulnerable Implementation</h6>
+          <p class="small text-secondary mb-1">Located in <code>app.py</code> within function <code>cmdi_inband()</code>:</p>
+          <div class="code-box small">
+# User input passed directly into shell command string with shell=True
+cmd = f"ping -n 1 {target_host}"
+result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+return result.stdout  # Directly returned to the user
+          </div>
+        </div>
+
+        <!-- (b) Working Exploit -->
+        <div class="mb-3">
+          <h6 class="text-warning fw-bold"><i class="bi bi-terminal me-1"></i>(b) Working Exploit Payload</h6>
+          <p class="small text-secondary mb-1">In the target field, supply command chained payload:</p>
+          <div class="code-box text-light small">127.0.0.1 && whoami</div>
+          <p class="small text-secondary mt-1">
+            <strong>How it works:</strong> The <code>&&</code> operator instructs the shell to execute the first command (ping), and upon its completion, immediately execute the second command (<code>whoami</code> or <code>dir</code>). Because the application captures <code>stdout</code> and prints it to the web page, the execution is <strong>in-band</strong>.
+          </p>
+        </div>
+
+        <!-- (c) Root Cause -->
+        <div class="mb-3">
+          <h6 class="text-primary fw-bold"><i class="bi bi-info-circle me-1"></i>(c) Root Cause</h6>
+          <p class="small text-light mb-0 bg-dark p-2 rounded border border-secondary">
+            <strong>Invoking a system shell with unsanitized user data:</strong> Enabling <code>shell=True</code> spawns a command shell (e.g., <code>cmd.exe</code> or <code>/bin/sh</code>), which treats characters like <code>&&</code>, <code>&amp;</code>, <code>;</code>, and <code>|</code> as command separators, executing arbitrary attacker instructions.
+          </p>
+        </div>
+
+        <!-- (d) Mitigation Implemented -->
+        <div class="mb-3">
+          <h6 class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i>(d) Mitigation Implemented</h6>
+          <p class="small text-secondary mb-1">
+            <strong>Dual Defense: Input Validation + Parameterized Execution (shell=False):</strong>
+            First, validate the target against a strict regex allow-list. Second, avoid the shell completely by passing arguments as an array (argument vector).
+          </p>
+          <div class="code-box small text-success">
+# 1. Allow-list validation
+if not re.match(r"^[a-zA-Z0-9.-]+$", target_host):
+    raise ValueError("Invalid target format.")
+
+# 2. Argument vector without shell invocation
+arg_vector = ["ping", "-n", "1", target_host]
+result = subprocess.run(arg_vector, shell=False, capture_output=True)
+          </div>
+        </div>
+
+        <!-- (e) Other Mitigations (Theory) -->
+        <div class="mb-2">
+          <h6 class="text-info fw-bold"><i class="bi bi-journal-bookmark me-1"></i>(e) Other Mitigations from Lecture (Theory)</h6>
+          <ul class="small text-secondary ps-3 mb-0">
+            <li><strong>Avoid the shell entirely:</strong> Use built-in high-level language programming APIs or libraries (such as Python's <code>socket</code> library or ICMP modules) rather than spawning external OS binaries.</li>
+            <li><strong>Parameterized execution with an argument vector:</strong> Ensures arguments cannot be re-parsed as options or chained commands.</li>
+            <li><strong>Strict allow-list validation:</strong> Reject any input that does not strictly match expected patterns (IPv4/IPv6 or FQDN format).</li>
+            <li><strong>Least privilege:</strong> Run the web server process under a heavily sandboxed, unprivileged service account with no access to system administration binaries.</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function setCmdPayload(p) {
+  document.getElementById('target_input').value = p;
+}
+</script>
+{% endblock %}
